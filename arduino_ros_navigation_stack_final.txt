@@ -1,0 +1,359 @@
+#include <ros.h>
+#include <std_msgs/String.h>
+#include <util/atomic.h>
+#include <ctype.h>
+#include <std_msgs/Int16.h>
+#include <geometry_msgs/Twist.h>
+
+
+// Handles startup and shutdown of ROS
+ros::NodeHandle nh;
+
+std_msgs::Int16 right_wheel_tick_count;
+ros::Publisher rightPub("right_ticks", &right_wheel_tick_count);
+ 
+std_msgs::Int16 left_wheel_tick_count;
+ros::Publisher leftPub("left_ticks", &left_wheel_tick_count);
+
+std_msgs::Int16 pwm_values;
+ros::Publisher pwm_pub("pwm", &pwm_values);
+
+// Pins
+#define ENCA 2
+#define ENCB 4
+#define PWM 9
+#define IN1 5
+#define IN2 6
+
+
+#define ENCA_2 3
+#define ENCB_2 11
+#define PWM_2 10
+#define IN1_2 8
+#define IN2_2 7
+
+
+
+
+// globals
+long prevT = 0;
+int posPrev = 0;
+// Use the "volatile" directive for variables
+// used in an interrupt
+volatile int pos_i = 0;
+volatile float velocity_i = 0;
+volatile long prevT_i = 0;
+
+float v1Filt = 0;
+float v1Prev = 0;
+float v2Filt = 0;
+float v2Prev = 0;
+
+float eintegral = 0;
+float vt = 0;
+String previous_command = "";
+
+
+
+
+
+// globals
+long prevT_2 = 0;
+int posPrev_2 = 0;
+// Use the "volatile" directive for variables
+// used in an interrupt
+volatile int pos_i_2 = 0;
+volatile float velocity_i_2 = 0;
+volatile long prevT_i_2 = 0;
+
+float v1Filt_2 = 0;
+float v1Prev_2 = 0;
+float v2Filt_2 = 0;
+float v2Prev_2 = 0;
+
+float eintegral_2 = 0;
+float vt_2 = 0;
+String previous_command_2 = "";
+
+const int PWM_TURN = 40;
+
+
+void calc_pwm_values(const geometry_msgs::Twist& cmdVel) {
+
+
+
+    if (cmdVel.angular.z != 0.0) {
+ 
+    // Turn left
+    if (cmdVel.angular.z > 0.0) {
+      vt = -PWM_TURN;
+      vt_2 = -PWM_TURN;
+    }
+    // Turn right    
+    else {
+      vt = PWM_TURN;
+      vt_2 = PWM_TURN;
+    }
+  }
+  else
+  {
+   vt = cmdVel.linear.x*100;
+   vt_2 = -cmdVel.linear.x*100;
+   pwm_values.data = vt;
+  }
+
+  
+
+}
+
+ros::Subscriber<geometry_msgs::Twist> subCmdVel("cmd_vel", &calc_pwm_values );
+
+void setup() {
+//  Serial.begin(9600); //Initialize Serial Port 
+
+  pinMode(13, OUTPUT);
+  pinMode(14, OUTPUT);
+  pinMode(ENCA,INPUT);
+  pinMode(ENCB,INPUT);
+  pinMode(PWM,OUTPUT);
+  pinMode(IN1,OUTPUT);
+  pinMode(IN2,OUTPUT);
+
+
+  pinMode(ENCA_2,INPUT);
+  pinMode(ENCB_2,INPUT);
+  pinMode(PWM_2,OUTPUT);
+  pinMode(IN1_2,OUTPUT);
+  pinMode(IN2_2,OUTPUT);
+  attachInterrupt(digitalPinToInterrupt(ENCA),
+                  readEncoder,RISING);
+  attachInterrupt(digitalPinToInterrupt(ENCA_2),
+                  readEncoder_2,RISING);
+
+
+
+
+
+  nh.getHardware()->setBaud(115200);
+  nh.initNode();
+  nh.advertise(rightPub);
+  nh.advertise(leftPub);
+//  nh.advertise(pwm_pub);
+  nh.subscribe(subCmdVel);
+
+  delay(1500); //delay
+  
+
+}
+
+long previousMillis = 0;
+long currentMillis = 0;
+
+void loop() {
+  nh.spinOnce();
+  currentMillis = millis();
+  
+  int pos = 0;
+  int pos_2 = 0;
+  
+  float velocity2 = 0;
+  float velocity2_2 = 0;
+  
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
+    pos = pos_i;
+    velocity2 = velocity_i;
+  }
+
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
+    pos_2 = pos_i_2;
+    velocity2_2 = velocity_i_2;
+  }
+
+  // Compute velocity with method 1
+  long currT = micros();
+  float deltaT = ((float) (currT-prevT))/1.0e6;
+  float velocity1 = (pos - posPrev)/deltaT;
+  posPrev = pos;
+  prevT = currT;
+
+
+  long currT_2 = micros();
+  float deltaT_2 = ((float) (currT_2-prevT_2))/1.0e6;
+  float velocity1_2 = (pos_2 - posPrev_2)/deltaT_2;
+  posPrev_2 = pos_2;
+  prevT_2 = currT_2;
+
+  
+  // Convert count/s to RPM
+  float v1 = velocity1/600.0*60.0;
+  float v2 = velocity2/600.0*60.0;
+
+
+  float v1_2 = velocity1_2/600.0*60.0;
+  float v2_2 = velocity2_2/600.0*60.0;
+
+  
+  // Low-pass filter (25 Hz cutoff)
+  v1Filt = 0.854*v1Filt + 0.0728*v1 + 0.0728*v1Prev;
+  v1Prev = v1;
+  v2Filt = 0.854*v2Filt + 0.0728*v2 + 0.0728*v2Prev;
+  v2Prev = v2;
+
+
+  v1Filt_2 = 0.854*v1Filt_2 + 0.0728*v1_2 + 0.0728*v1Prev_2;
+  v1Prev_2 = v1_2;
+  v2Filt_2 = 0.854*v2Filt_2 + 0.0728*v2_2 + 0.0728*v2Prev_2;
+  v2Prev_2 = v2_2;
+  
+  float kp = 5;
+  float ki = 8;
+  float e = vt-v1Filt;
+  eintegral = eintegral + e*deltaT;
+
+
+  float kp_2 = 5;
+  float ki_2 = 8;
+  float e_2 = vt_2-v1Filt_2;
+  eintegral_2 = eintegral_2 + e_2*deltaT_2;
+  
+  float u = kp*e + ki*eintegral;
+  float u_2 = kp_2*e_2 + ki_2*eintegral_2;
+
+  // Set the motor speed and direction
+  int dir = 1;
+  if (u<0){
+    dir = -1;
+  }
+  int pwr = (int) fabs(u);
+  if(pwr > 255){
+    pwr = 255;
+  }
+  setMotor(dir,pwr,PWM,IN1,IN2);
+
+
+  // Set the motor speed and direction
+  int dir_2 = 1;
+  if (u_2<0){
+    dir_2 = -1;
+  }
+  int pwr_2 = (int) fabs(u_2);
+  if(pwr_2 > 255){
+    pwr_2 = 255;
+  }
+  setMotor_2(dir_2,pwr_2,PWM_2,IN1_2,IN2_2);
+
+//  leftPub.publish( &left_wheel_tick_count );
+//  rightPub.publish( &right_wheel_tick_count );
+
+
+  if (currentMillis - previousMillis > 30) {
+     
+    previousMillis = currentMillis;
+ 
+    // Publish tick counts to topics
+    leftPub.publish( &left_wheel_tick_count );
+    rightPub.publish( &right_wheel_tick_count );
+ 
+
+     
+  }
+
+}
+
+
+
+
+void setMotor(int dir, int pwmVal, int pwm, int in1, int in2){
+  analogWrite(pwm,pwmVal); // Motor speed
+//  Serial.print("this is motor 1:   ");
+//  Serial.println(pwmVal);
+  
+  if(dir == 1){ 
+    // Turn one way
+    digitalWrite(in1,HIGH);
+    digitalWrite(in2,LOW);
+  }
+  else if(dir == -1){
+    // Turn the other way
+    digitalWrite(in1,LOW);
+    digitalWrite(in2,HIGH);
+  }
+  else{
+    // Or dont turn
+    digitalWrite(in1,LOW);
+    digitalWrite(in2,LOW);    
+  }
+}
+
+
+
+
+
+void setMotor_2(int dir, int pwmVal, int pwm, int in1, int in2){
+  analogWrite(pwm,pwmVal); // Motor speed
+//  Serial.print("this is motor 2:   ");
+//  Serial.println(pwmVal);
+  if(dir == 1){ 
+    // Turn one way
+    digitalWrite(in1,HIGH);
+    digitalWrite(in2,LOW);
+  }
+  else if(dir == -1){
+    // Turn the other way
+    digitalWrite(in1,LOW);
+    digitalWrite(in2,HIGH);
+  }
+  else{
+    // Or dont turn
+    digitalWrite(in1,LOW);
+    digitalWrite(in2,LOW);    
+  }
+}
+
+void readEncoder(){
+  // Read encoder B when ENCA rises
+  int b = digitalRead(ENCB);
+  int increment = 0;
+  if(b>0){
+    // If B is high, increment forward
+    increment = 1;
+  }
+  else{
+    // Otherwise, increment backward
+    increment = -1;
+  }
+  pos_i = pos_i + increment;
+
+left_wheel_tick_count.data = pos_i;
+
+  // Compute velocity with method 2
+//  long currT = micros();
+//  float deltaT = ((float) (currT - prevT_i))/1.0e6;
+//  velocity_i = increment/deltaT;
+//  prevT_i = currT;
+}
+
+
+
+
+void readEncoder_2(){
+  // Read encoder B when ENCA rises
+  int b = digitalRead(ENCB_2);
+  int increment = 0;
+  if(b>0){
+    // If B is high, increment forward
+    increment = 1;
+  }
+  else{
+    // Otherwise, increment backward
+    increment = -1;
+  }
+  pos_i_2 = pos_i_2 + increment;
+  right_wheel_tick_count.data = pos_i_2;
+
+  // Compute velocity with method 2
+//  long currT = micros();
+//  float deltaT = ((float) (currT - prevT_i))/1.0e6;
+//  velocity_i = increment/deltaT;
+//  prevT_i = currT;
+}
