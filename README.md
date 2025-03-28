@@ -11,7 +11,7 @@ This project showcases the development of an autonomous Unmanned Ground Vehicle 
 - Custom Gazebo simulation environment
 - ROS-compatible URDF and config files
 
-```
+
 ## 📸 Media
 
 <table>
@@ -27,7 +27,7 @@ A demonstration of the robotic crack measurement system can be seen below:
 <div align="center">
 <video src="https://github.com/user-attachments/assets/706ef7f4-40e0-4029-8845-91a721941b05" width="352" height="720"></video>
 </div>
-```
+
 ## 📁 Directory Overview
 
 - `arduino/`: Code for Arduino-based motor controller using I2C and ROS Serial
