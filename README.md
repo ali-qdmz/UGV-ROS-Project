@@ -1,28 +1,65 @@
-# UGV ROS Project 🚗🤖
+# UGV ROS Project 🤖
 
-This project showcases the development of an autonomous Unmanned Ground Vehicle (UGV) using ROS. Built from scratch, the robot integrates sensors (camera, IMU, and 2D LiDAR), a custom Arduino motor controller, and uses the `move_base` package for navigation.
+This repository contains the development files for an Unmanned Ground Vehicle (UGV) built from scratch using ROS on a Jetson Nano. The robot supports remote manual and autonomous navigation, sensor streaming, and motor control using a custom Arduino driver.
+
+---
 
 ## 🔧 Features
 
 - Manual and autonomous control via ROS
-- Real-time video streaming and sensor data
-- RViz navigation via `move_base`
-- Arduino motor control via I2C
+- Real-time streaming of camera, IMU, and 2D LiDAR data
+- Navigation using `move_base` through RViz click-to-goal
+- Arduino motor control via I2C and ROS Serial
 - Custom Gazebo simulation environment
-- ROS-compatible URDF and config files
+- Self-built robot platform and control stack
+- Functional integration with `rqt_robot_steering`
+
+---
+
+## 📁 Project Structure
+1. Clone the Repository into Your Catkin Workspace
+```bash
+UGV-ROS-Project/
+├── jetson_nano_bot/         # Main robot navigation and control package
+├── ros-imu-bno055/          # IMU interface (BNO055) package
+├── rplidar_ros/             # 2D LIDAR (RPLIDAR) interface package
+├── README.md                # You're here!
+```
 
 
-## 📸 Media
 
-<table>
-  <tr>
-    <td><img src="docs/images/ugv_photo.jpg" width="300"/></td>
-    <td><img src="docs/images/simulation_rviz.png" width="300"/></td>
-  </tr>
-</table>
+🚀 Setup & Launch Instructions
+1. Clone the Repository into Your Catkin Workspace
+```bash
+cd ~/catkin_ws/src
+git clone https://github.com/ali-qdmz/UGV-ROS-Project.git
+cd ..
+catkin_make
+source devel/setup.bash
+```
+2. Launch the UGV Robot Stack
+```bash
+roslaunch navstack_pub jetson_nano_bot.launch
+```
+3. Grant I2C Permission for Arduino Motor Control
+```bash
+sudo chmod 666 /dev/i2c-3
+```
+4. Launch the Intel RealSense Camera
+```bash
+roslaunch realsense2_camera rs_camera.launch
+```
+🎮 Manual Control (Optional)
+You can use rqt_robot_steering to manually control the robot:
+```bash
+rosrun rqt_robot_steering rqt_robot_steering
+```
+✅ The Arduino motor controller is programmed to interface with ROS via I2C and receive velocity commands directly.
 
-## 🎥 Demonstration Video
-A demonstration of the robotic crack measurement system can be seen below:
+
+📹 Demo Videos
+
+Real Lab Test:
 
 <div align="center">
 <video src="https://github.com/user-attachments/assets/a4314669-bbcf-40fc-9f6c-99f1033c38df" width="352" height="720"></video>
@@ -37,26 +74,13 @@ A demonstration of the robotic crack measurement system can be seen below:
 <video src="https://github.com/user-attachments/assets/afbd2eb6-08d8-4cf9-ad78-cef5e8ea95d6" width="352" height="720"></video>
 </div>
 
-
+Simulation 
 <div align="center">
 <video src="https://github.com/user-attachments/assets/6b1c939a-f970-413c-af52-2a7a30d0e109" width="352" height="720"></video>
 </div>
 
+## 👨‍💻 Author
+ - Ali Ghadimzadeh Alamdari
+ - Ph.D. Candidate, Drexel University
+ - Electrical & Computer Science Team Lead @ Lubabotics (2023)
 
-## 📁 Directory Overview
-
-- `arduino/`: Code for Arduino-based motor controller using I2C and ROS Serial
-- `ros_ws/`: Catkin workspace with UGV ROS packages
-- `simulation/`: Custom Gazebo worlds and launch files
-- `docs/`: Documentation, images, and demo videos
-- `hardware/`: Specs and wiring diagrams for UGV components
-
-## 🛠️ Setup
-
-```bash
-# Clone repo
-git clone https://github.com/yourusername/ugv_ros_project.git
-cd ugv_ros_project/ros_ws
-catkin_make
-source devel/setup.bash
-roslaunch ugv_navigation bringup.launch
