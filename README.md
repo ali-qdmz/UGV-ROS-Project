@@ -11,6 +11,7 @@ This project showcases the development of an autonomous Unmanned Ground Vehicle 
 - Custom Gazebo simulation environment
 - ROS-compatible URDF and config files
 
+```
 ## 📸 Media
 
 <table>
@@ -19,7 +20,7 @@ This project showcases the development of an autonomous Unmanned Ground Vehicle 
     <td><img src="docs/images/simulation_rviz.png" width="300"/></td>
   </tr>
 </table>
-
+```
 ```
 ## 🎥 Demonstration Video
 A demonstration of the robotic crack measurement system can be seen below:
