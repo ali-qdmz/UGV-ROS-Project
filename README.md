@@ -25,7 +25,7 @@ This project showcases the development of an autonomous Unmanned Ground Vehicle 
 A demonstration of the robotic crack measurement system can be seen below:
 
 <div align="center">
-<video src="https://github.com/user-attachments/assets/706ef7f4-40e0-4029-8845-91a721941b05" width="352" height="720"></video>
+<video src="https://github.com/user-attachments/assets/706ef7f4-40e0-4029-8845-91a72196641b05" width="352" height="720"></video>
 </div>
 
 ## 📁 Directory Overview
