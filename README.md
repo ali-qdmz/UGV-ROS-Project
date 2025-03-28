@@ -33,6 +33,11 @@ A demonstration of the robotic crack measurement system can be seen below:
 <video src="https://github.com/user-attachments/assets/c4012d78-f0d0-400a-b571-0f7993356586" width="352" height="720"></video>
 </div>
 
+<div align="center">
+<video src="https://github.com/user-attachments/assets/afbd2eb6-08d8-4cf9-ad78-cef5e8ea95d6" width="352" height="720"></video>
+</div>
+
+
 ## 📁 Directory Overview
 
 - `arduino/`: Code for Arduino-based motor controller using I2C and ROS Serial
